@@ -103,6 +103,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     return;
   }
 
+  // Predict
   if ((use_radar_ && meas_package.sensor_type_ == meas_package.RADAR) ||
       (use_laser_ && meas_package.sensor_type_ == meas_package.LASER)) {
     double delta_t = (meas_package.timestamp_ - previous_timestamp_) / 1000000.0;
@@ -111,6 +112,7 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     Prediction(delta_t);
   }
 
+  // Update
   if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
     UKF::UpdateRadar(meas_package);
   } else {
