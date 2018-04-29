@@ -1,3 +1,8 @@
+// References:
+// 1. Udacity lessons / Quizzes
+// 2. Project walkthrough, Q&A
+// 3. Mentor support, slack support channels
+
 #include "ukf.h"
 #include "Eigen/Dense"
 #include <iostream>
@@ -54,11 +59,15 @@ UKF::UKF() {
   Hint: one or more values initialized above might be wildly off...
   */
 
+  // Init state vector size
   n_x_ = 5;
-  n_aug_ = 7;
-  lambda_ = (3 - n_aug_);
-
   x_ = VectorXd(n_x_);
+
+  // Init aug state vector size
+  n_aug_ = 7;
+
+  // spreading factor
+  lambda_ = (3 - n_aug_);
 
   Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
 
@@ -69,13 +78,15 @@ UKF::UKF() {
     0, 0, 0, 1, 0,
     0, 0, 0, 0, 1;
 
+  // Init weights
   weights_ = VectorXd(2 * n_aug_ + 1);
   weights_(0) = lambda_ / (lambda_ + n_aug_);
+
   for(int i = 1; i < (2 * n_aug_ + 1); ++i) {
     weights_(i) = 0.5 / (n_aug_ + lambda_);
   }
 
-  // Measurement Noises
+  // Measurement noises
   R_laser_ = MatrixXd(2, 2);
   R_laser_ << std_laspx_ * std_laspx_, 0,
     0, std_laspy_ * std_laspy_;
@@ -122,18 +133,17 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
     return;
   }
 
-  // Predict
   if ((use_radar_ && meas_package.sensor_type_ == meas_package.RADAR) ||
       (use_laser_ && meas_package.sensor_type_ == meas_package.LASER)) {
 
     double delta_t = (meas_package.timestamp_ - previous_timestamp_) / 1000000.0;
     previous_timestamp_ = meas_package.timestamp_;
 
+    // Predict
     Prediction(delta_t);
+    // Then Update
     UpdateMeasurement(meas_package);
   }
-
-  cout << endl << "Process Measurement end";
 }
 
 /**
@@ -211,8 +221,8 @@ void UKF::Prediction(double delta_t) {
     py_p = py_p + 0.5 * nu_a * delta_t * delta_t * sin(yaw);
     v_p = v_p + nu_a * delta_t;
 
-    yaw_p = yaw_p + 0.5*nu_yawdd*delta_t*delta_t;
-    yawd_p = yawd_p + nu_yawdd*delta_t;
+    yaw_p = yaw_p + 0.5 * nu_yawdd * delta_t * delta_t;
+    yawd_p = yawd_p + nu_yawdd * delta_t;
 
     // write predicted sigma point into right column
     Xsig_pred_(0, i) = px_p;
@@ -248,8 +258,6 @@ void UKF::Prediction(double delta_t) {
 
     P_ = P_ + + weights_(i) * x_diff * x_diff.transpose();
   }
-
-  cout << endl << "Prediction end";
 }
 
 void UKF::UpdateMeasurement(MeasurementPackage meas_package) {
@@ -313,14 +321,13 @@ void UKF::UpdateMeasurement(MeasurementPackage meas_package) {
     }
   }
 
-
-  //mean predicted measurement
+  // mean predicted measurement
   z_pred.fill(0.0);
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {
     z_pred = z_pred + weights_(i) * z_sig.col(i);
   }
 
-  //measurement covariance matrix
+  // measurement covariance matrix
   MatrixXd S = MatrixXd(n_z, n_z);
   S.fill(0.0);
 
@@ -337,7 +344,7 @@ void UKF::UpdateMeasurement(MeasurementPackage meas_package) {
     Tc = Tc + weights_(i) * x_diff * z_diff.transpose();
   }
 
-  //add measurement noise covariance matrix
+  // add measurement noise covariance matrix
   S = S + R;
 
   // Kalman gain K;
@@ -351,11 +358,11 @@ void UKF::UpdateMeasurement(MeasurementPackage meas_package) {
     z_diff(1) = remainder(z_diff(1), 2.0 * M_PI);
   }
 
-  //update state mean and covariance matrix
+  // update state mean and covariance matrix
   x_ = x_ + K * z_diff;
   P_ = P_ - K * S * K.transpose();
 
-  // Calculating NIS
+  // NIS
   string sensor_type = meas_package.sensor_type_ == meas_package.RADAR ? "Radar" : "Laser";
   VectorXd nis = z_diff.transpose() * S.inverse() * z_diff;
   cout << "NIS " << sensor_type << ": " << nis << endl;
