@@ -57,8 +57,11 @@ UKF::UKF() {
   n_x_ = 5;
   n_aug_ = 7;
   lambda_ = (3 - n_aug_);
+
   x_ = VectorXd(n_x_);
+
   Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
+
   P_ = MatrixXd(n_x_, n_x_);
   P_ << 1, 0, 0, 0, 0,
     0, 1, 0, 0, 0,
@@ -164,24 +167,14 @@ void UKF::Prediction(double delta_t) {
   P_aug(6, 6) = std_yawdd_ * std_yawdd_;
 
   MatrixXd L = P_aug.llt().matrixL();
-  cout << endl << "Prediction - sigma0" << endl;
   MatrixXd sq_factor = sqrt(lambda_ + n_aug_) * L;
-  cout << endl << "Prediction - sigma1-1" << endl;
 
-  MatrixXd x_replicated = x_aug.rowwise().replicate(7);
-  Xsig_aug.block<7, 1>(0, 0) = x_aug;
-  Xsig_aug.block<7, 7>(0, 1) = x_replicated + sq_factor;
-  Xsig_aug.block<7, 7>(0, 8) = x_replicated - sq_factor;
+  Xsig_aug.col(0) = x_aug; // the mean position is at 0
 
-
-  // Xsig_aug.col(0) = x_aug; // the mean position is at 0
-
-  // cout << endl << "Prediction - sigma1" << endl;
-
-  // for(int i = 0; i < n_aug_; i++) {
-  //   Xsig_aug.col(i + 1)          = x_aug + sq_factor;
-  //   Xsig_aug.col(i + 1 + n_aug_) = x_aug - sq_factor;
-  // }
+  for(int i = 0; i < n_aug_; i++) {
+    Xsig_aug.col(i + 1)          = x_aug + sqrt(lambda_ + n_aug_) * L.col(i);;
+    Xsig_aug.col(i + 1 + n_aug_) = x_aug - sqrt(lambda_ + n_aug_) * L.col(i);;
+  }
 
   cout << endl << "Prediction - sigma" << endl;
 
