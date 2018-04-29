@@ -60,8 +60,13 @@ UKF::UKF() {
   lambda_ = (3 - n_aug_);
   x_ = VectorXd(n_x_);
   Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
-  weights_ = VectorXd(2 * n_aug_ + 1);
   P_ = MatrixXd(n_x_, n_x_);
+
+  weights_ = VectorXd(2 * n_aug_ + 1);
+  weights_(0) = lambda_ / (lambda_ + n_aug_);
+  for(int i = 1; i < (2 * n_aug_); ++i) {
+    weights_(i) = 0.5 / (n_aug_ + lambda_);
+  }
 }
 
 UKF::~UKF() {}
@@ -108,6 +113,7 @@ void UKF::Prediction(double delta_t) {
 
   MatrixXd L = P_aug.llt().matrixL();
   Xsig_aug.col(0) = x_aug; // the mean position is at 0
+
   for(int i = 0; i < n_aug_; i++) {
     VectorXd sq_factor = sqrt(lambda_ + n_aug_) * L.col(i);
     Xsig_aug.col(i + 1) = x_aug + sq_factor;
@@ -160,11 +166,6 @@ void UKF::Prediction(double delta_t) {
 
   // -------- Predict mean and covariance -------
   // Set Weights
-  weights_(0) = lambda_ / (lambda_ + n_aug_);
-  for(int i = 1; i < (2 * n_aug_); ++i) {
-    weights_(i) = 0.5 / (n_aug_ + lambda_);
-  }
-
   // predict state mean
   x_.fill(0.0);
   for(int i = 0; i < (2 * n_aug_ + 1); ++i) {
@@ -176,6 +177,7 @@ void UKF::Prediction(double delta_t) {
   for(int i = 0; i < (2 * n_aug_ + 1); ++i) {
     VectorXd x_diff = Xsig_pred_.col(i) - x_;
 
+    // normalize angle
     while(x_diff(3) > M_PI) {
       x_diff(3) -= 2 * M_PI;
     }
