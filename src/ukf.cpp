@@ -7,10 +7,9 @@ using Eigen::MatrixXd;
 using Eigen::VectorXd;
 using std::vector;
 
-/**
- * Initializes Unscented Kalman filter
- * This is scaffolding, do not modify
- */
+// * Initializes Unscented Kalman filter
+// * This is scaffolding, do not modify
+// */
 UKF::UKF() {
   // if this is false, laser measurements will be ignored (except during init)
   use_laser_ = true;
@@ -25,7 +24,7 @@ UKF::UKF() {
   P_ = MatrixXd(5, 5);
 
   // Process noise standard deviation longitudinal acceleration in m/s^2
-  std_a_ = 1;
+  std_a_ = 1.0;
 
   // Process noise standard deviation yaw acceleration in rad/s^2
   std_yawdd_ = 0.1;
@@ -55,13 +54,18 @@ UKF::UKF() {
   Hint: one or more values initialized above might be wildly off...
   */
 
+
   n_x_ = 5;
-  n_z = 3;
   n_aug_ = 7;
   lambda_ = (3 - n_aug_);
   x_ = VectorXd(n_x_);
   Xsig_pred_ = MatrixXd(n_x_, 2 * n_aug_ + 1);
   P_ = MatrixXd(n_x_, n_x_);
+  P_ << 1, 0, 0, 0, 0,
+    0, 1, 0, 0, 0,
+    0, 0, 1, 0, 0,
+    0, 0, 0, 1, 0,
+    0, 0, 0, 0, 1;
 
   weights_ = VectorXd(2 * n_aug_ + 1);
   weights_(0) = lambda_ / (lambda_ + n_aug_);
@@ -87,6 +91,9 @@ UKF::~UKF() {}
  * either radar or laser.
  */
 void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
+
+  cout << endl << "Process Measurement";
+
   /**
   TODO:
 
@@ -117,17 +124,12 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
   // Predict
   if ((use_radar_ && meas_package.sensor_type_ == meas_package.RADAR) ||
       (use_laser_ && meas_package.sensor_type_ == meas_package.LASER)) {
+
     double delta_t = (meas_package.timestamp_ - previous_timestamp_) / 1000000.0;
     previous_timestamp_ = meas_package.timestamp_;
 
     Prediction(delta_t);
-  }
-
-  // Update
-  if (meas_package.sensor_type_ == MeasurementPackage::RADAR) {
-    UKF::UpdateRadar(meas_package);
-  } else {
-    UKF::UpdateLidar(meas_package);
+    UpdateMeasurement(meas_package);
   }
 }
 
@@ -137,6 +139,9 @@ void UKF::ProcessMeasurement(MeasurementPackage meas_package) {
  * measurement and this one.
  */
 void UKF::Prediction(double delta_t) {
+
+  cout << endl << "Prediction funtion";
+
   /**
      TODO:
 
@@ -238,6 +243,7 @@ void UKF::Prediction(double delta_t) {
 }
 
 void UKF::UpdateMeasurement(MeasurementPackage meas_package) {
+  cout << endl << "Updating measurement";
   // create matrix for sigma points in measurement space
   MatrixXd z_sig = MatrixXd(n_z, 2 * n_aug_ + 1);
   VectorXd z;
@@ -297,6 +303,7 @@ void UKF::UpdateMeasurement(MeasurementPackage meas_package) {
       z_sig(2, i) = (z_sig(0, i) < 0.0001 ? (p_x * v_x + p_y * v_y) / 0.0001 : (p_x * v_x + p_y * v_y) / z_sig(0, i));
     }
   }
+  cout << endl << "Updating measurement 2";
 
   // transform sigma points into measurement space
   for (int i = 0; i < 2 * n_aug_ + 1; i++) {  //2n+1 simga points
@@ -317,6 +324,9 @@ void UKF::UpdateMeasurement(MeasurementPackage meas_package) {
   }
 
   // ---------------------------------------
+
+  cout << endl << "Updating measurement 3";
+
   z = VectorXd(n_z);
   z_pred = VectorXd(n_z);
   z_pred.fill(0.0);
