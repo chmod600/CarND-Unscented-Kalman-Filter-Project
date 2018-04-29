@@ -60,6 +60,17 @@ public:
 
   ///* State dimension
   int n_x_;
+  int n_z;
+
+  ///* Radar measurements
+  int n_z_radar_ = 3;
+
+  ///* Lidar measurements
+  int n_z_lidar_ = 2;
+
+ // Measurement Noises
+  MatrixXd R_laser_;
+  MatrixXd R_radar_;
 
   ///* Augmented state dimension
   int n_aug_;
@@ -91,6 +102,8 @@ public:
    * @param delta_t Time between k and k+1 in s
    */
   void Prediction(double delta_t);
+
+  void UpdateMeasurement(MeasurementPackage meas_package);
 
   /**
    * Updates the state and the state covariance matrix using a laser measurement
