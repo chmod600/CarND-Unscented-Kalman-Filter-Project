@@ -68,7 +68,7 @@ UKF::UKF() {
 
   weights_ = VectorXd(2 * n_aug_ + 1);
   weights_(0) = lambda_ / (lambda_ + n_aug_);
-  for(int i = 1; i < (2 * n_aug_); ++i) {
+  for(int i = 1; i < (2 * n_aug_ + 1); ++i) {
     weights_(i) = 0.5 / (n_aug_ + lambda_);
   }
 
@@ -357,8 +357,6 @@ void UKF::UpdateMeasurement(MeasurementPackage meas_package) {
   if (meas_package.sensor_type_ == meas_package.RADAR) {
     z_diff(1) = remainder(z_diff(1), 2.0 * M_PI);
   }
-
-
 
   //update state mean and covariance matrix
   x_ = x_ + K * z_diff;
